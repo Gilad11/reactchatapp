@@ -1,0 +1,23 @@
+.gradient-custom {
+  background: linear-gradient(
+    to right,
+    rgba(106, 17, 203, 1),
+    rgba(37, 117, 252, 1)
+  ) !important;
+  height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.custom-card {
+  max-width: 700px !important;
+  width: 100% !important;
+}
+
+.card {
+  width: 100% !important;
+  max-width: 600px !important;
+  border-radius: 1rem !important;
+  margin: auto !important;
+}

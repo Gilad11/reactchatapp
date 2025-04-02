@@ -18,13 +18,35 @@ const HomePage = () => {
   const navigate = useNavigate();
   const userIn = sessionStorage.getItem("username");
 
+  const formatTime = (dateString) => {
+    if (!dateString) return "never";
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
+
   const handleInputChange = (e) => {
     setInputText(e.target.value.trimStart()); // Prevent leading spaces
   };
 
-  const sendGameRequest = async () => {
+  const gameForword = async (p1, p2) => {};
+
+  const sendGameRequest = 0;
+  /* = async (p1, p2) => {
+      setSelectedChat(p1);
+      try {
+        const data = await MessageController.GetMessagesBetweenUsers(
+          userIn,
+          chat.id
+        );
+        setMessages(data);
+      } catch (error) {
+        console.error("❌ Error fetching messages:", error);
+      }
+    };
+    
+    var gameid =  
     navigate("/game");
-  };
+  };*/
 
   useEffect(() => {
     if (userIn) {
@@ -40,7 +62,7 @@ const HomePage = () => {
 
     hubConnection.on("ReceiveMessage", (senderId, content) => {
       console.log("Message received:", senderId, content);
-       setMessages((prev) => [...prev, { senderId, content }]);
+      setMessages((prev) => [...prev, { senderId, content }]);
     });
 
     return () => {
@@ -178,7 +200,7 @@ const HomePage = () => {
                           {selectedChat?.name || "Nobody"}
                         </h6>
                         <small>
-                          Last seen: {selectedChat?.lastActiveDate || "never"}
+                          Last seen: {formatTime(selectedChat?.lastActiveDate)}
                         </small>
                       </div>
                     </div>
@@ -195,7 +217,7 @@ const HomePage = () => {
                           {message.senderId === userIn ? (
                             <div className="msg-wrapper">
                               <span className="message-data-time float-right">
-                                {message.sentAt}
+                                {formatTime(message.sentAt)}
                               </span>
                               <div className="message other-message float-right">
                                 {message.content}
@@ -204,7 +226,8 @@ const HomePage = () => {
                           ) : (
                             <div className="msg-wrapper">
                               <span className="message-data-time">
-                                {message.sentAt} <br /> {message.userid}
+                                {formatTime(message.sentAt)} <br />{" "}
+                                {message.userid}
                               </span>
                               <div className="message my-message">
                                 {message.content}

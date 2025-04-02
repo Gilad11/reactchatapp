@@ -21,7 +21,24 @@ const HomePage = () => {
   const formatTime = (dateString) => {
     if (!dateString) return "never";
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  };
+
+  const [searchText, setSearchText] = useState("");
+
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);
+  };
+
+  const handleSearchClick = () => {
+    const filteredUsers = data.filter((user) =>
+      user.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+    setData(filteredUsers);
   };
 
   const handleInputChange = (e) => {
@@ -153,16 +170,20 @@ const HomePage = () => {
             <div className="card chat-app">
               <div id="plist" className="people-list">
                 <div className="input-group">
-                  <div className="input-group-prepend">
-                    <span className="input-group-text">
-                      <i className="fa fa-search"></i>
-                    </span>
-                  </div>
+                  <div className="input-group-prepend"></div>
                   <input
                     type="text"
                     className="form-control"
                     placeholder="Search..."
                   />
+                  <div className="input-group-append">
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleSearchClick}
+                    >
+                      <i className="fa fa-search"></i> Search
+                    </button>
+                  </div>
                 </div>
                 <ul className="list-unstyled chat-list mt-2 mb-0">
                   {data.map((chat, index) => (
@@ -192,9 +213,6 @@ const HomePage = () => {
                           alt="picture"
                         />
                       </a>
-                      <button className="gamerequest" onClick={sendGameRequest}>
-                        Game Rquest
-                      </button>
                       <div className="chat-about">
                         <h6 className="m-b-0">
                           {selectedChat?.name || "Nobody"}
@@ -204,6 +222,9 @@ const HomePage = () => {
                         </small>
                       </div>
                     </div>
+                    <button className="gamerequest" onClick={sendGameRequest}>
+                      Game Rquest
+                    </button>
                   </div>
                 </div>
                 <div className="chat-history">
@@ -215,20 +236,20 @@ const HomePage = () => {
                           className="clearfix"
                         >
                           {message.senderId === userIn ? (
-                            <div className="msg-wrapper">
-                              <span className="message-data-time float-right">
+                            <div className="msg-wrapper text-right">
+                              <div className="text-left">
                                 {formatTime(message.sentAt)}
-                              </span>
+                              </div>
                               <div className="message other-message float-right">
                                 {message.content}
                               </div>
                             </div>
                           ) : (
                             <div className="msg-wrapper">
-                              <span className="message-data-time">
+                              <div className="text-right">
                                 {formatTime(message.sentAt)} <br />{" "}
                                 {message.userid}
-                              </span>
+                              </div>
                               <div className="message my-message">
                                 {message.content}
                               </div>

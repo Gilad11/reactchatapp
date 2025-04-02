@@ -4,7 +4,7 @@
   gap: 5px;
 }
 
-.gamerequest{
+.gamerequest {
   align-items: end;
   float: right;
   background-color: #1d8ecd;
@@ -49,6 +49,8 @@ body {
   padding: 10px 15px;
   list-style: none;
   border-radius: 3px;
+  display: flex;
+  align-items: center;
 }
 
 .people-list .chat-list li:hover {
@@ -62,6 +64,7 @@ body {
 
 .people-list .chat-list li .name {
   font-size: 15px;
+  padding-left: 8px;
 }
 
 .people-list .chat-list img {
@@ -245,6 +248,7 @@ body {
   }
 }
 
+
 @media only screen and (min-width: 768px) and (max-width: 992px) {
   .chat-app .chat-list {
     height: 650px;
@@ -265,4 +269,15 @@ body {
     height: calc(100vh - 350px);
     overflow-x: auto;
   }
+}
+.row {
+  justify-content: space-between;
+  width: 100%;
+  flex-direction: row;
+}
+.text-right{
+  text-align: end;
+}
+.text-left{
+  text-align: start;
 }

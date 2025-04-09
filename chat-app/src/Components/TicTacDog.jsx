@@ -1,8 +1,8 @@
 // TicTacToeGame.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 // Creates an empty game board with a valid ReceiverId.
-function createEmptyGame(opponentId) {
+function createEmptyGame(myId, opponentId) {
   return {
     id: 0, // if created on the server, the game id will be set later.
     cell1: 0,
@@ -14,53 +14,78 @@ function createEmptyGame(opponentId) {
     cell7: 0,
     cell8: 0,
     cell9: 0,
-    SenderId: '', // Will be set on the first move.
-    ReceiverId: opponentId || ''
+    SenderId: myId || "",
+    ReceiverId: opponentId || "",
   };
 }
 
-const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUpdate }) => {
+const TicTacToeGame = ({
+  game: initialGame,
+  saveGame,
+  myId,
+  opponentId,
+  onGameUpdate,
+}) => {
   // If no game is passed, initialize an empty one with the proper receiver.
-  const [game, setGame] = useState(initialGame ? { ...initialGame } : createEmptyGame(opponentId));
+  const [game, setGame] = useState(
+    initialGame ? { ...initialGame } : createEmptyGame(myId, opponentId)
+  );
   const [hoveredCell, setHoveredCell] = useState(null);
   const [winner, setWinner] = useState(null);
+  // New state object that tracks whose turn it is.
+  // Start with red's turn.
+  const [turn, setTurn] = useState({ red: true, blue: false });
 
-  // Update internal game state when a new game object arrives.
+  // Update internal game state (and reset turns) when a new game object arrives.
   useEffect(() => {
-    setGame(initialGame ? { ...initialGame } : createEmptyGame(opponentId));
-  }, [initialGame, opponentId]);
+    setGame(
+      initialGame ? { ...initialGame } : createEmptyGame(myId, opponentId)
+    );
+    setTurn({ red: true, blue: false });
+    setWinner(null);
+  }, [initialGame, myId, opponentId]);
 
   // Convert the game board cells into an array.
   const boardCells = [
-    game.cell1, game.cell2, game.cell3,
-    game.cell4, game.cell5, game.cell6,
-    game.cell7, game.cell8, game.cell9,
+    game.cell1,
+    game.cell2,
+    game.cell3,
+    game.cell4,
+    game.cell5,
+    game.cell6,
+    game.cell7,
+    game.cell8,
+    game.cell9,
   ];
 
   // Count how many red and blue pieces have been placed.
-  const redCount = boardCells.reduce((acc, cell) => (cell > 0 ? acc + 1 : acc), 0);
-  const blueCount = boardCells.reduce((acc, cell) => (cell < 0 ? acc + 1 : acc), 0);
-
-  // Red always goes first.
-  // If counts are equal, it’s red’s turn; otherwise blue’s turn.
-  const currentTurn = redCount === blueCount ? 'red' : 'blue';
+  const redCount = boardCells.reduce(
+    (acc, cell) => (cell > 0 ? acc + 1 : acc),
+    0
+  );
+  const blueCount = boardCells.reduce(
+    (acc, cell) => (cell < 0 ? acc + 1 : acc),
+    0
+  );
 
   // Determine my color. For a new game, assume I'm red.
-  const myColor = (!game.SenderId && !game.ReceiverId)
-    ? 'red'
-    : (myId === game.SenderId ? 'red' : 'blue');
+  const myColor =
+    !game.SenderId && !game.ReceiverId
+      ? "red"
+      : myId === game.SenderId
+      ? "red"
+      : "blue";
 
-  // Disable the board if a winner is declared OR if it's not your turn.
-  // (Rule: if you were the last mover -- i.e. your id is stored in SenderId -- then wait for opponent.)
-  const boardDisabled = !!winner || (game.SenderId === myId);
+  // Disable the board if a winner is declared OR if it's not the player's turn.
+  const boardDisabled = !!winner || !turn[myColor];
 
   // Each player starts with 3 available pieces per level: 1 (mouse), 2 (cat), 3 (dog).
   // Count the pieces you have already played.
   const availablePieces = { 1: 3, 2: 3, 3: 3 };
-  boardCells.forEach(cell => {
-    if (myColor === 'red' && cell > 0) {
+  boardCells.forEach((cell) => {
+    if (myColor === "red" && cell > 0) {
       availablePieces[cell]--;
-    } else if (myColor === 'blue' && cell < 0) {
+    } else if (myColor === "blue" && cell < 0) {
       availablePieces[Math.abs(cell)]--;
     }
   });
@@ -75,13 +100,13 @@ const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUp
       [1, 4, 7],
       [2, 5, 8],
       [0, 4, 8],
-      [2, 4, 6]
+      [2, 4, 6],
     ];
     for (let [a, b, c] of lines) {
       if (board[a] !== 0 && board[b] !== 0 && board[c] !== 0) {
-        const colorA = board[a] > 0 ? 'red' : 'blue';
-        const colorB = board[b] > 0 ? 'red' : 'blue';
-        const colorC = board[c] > 0 ? 'red' : 'blue';
+        const colorA = board[a] > 0 ? "red" : "blue";
+        const colorB = board[b] > 0 ? "red" : "blue";
+        const colorC = board[c] > 0 ? "red" : "blue";
         if (colorA === colorB && colorB === colorC) {
           return colorA;
         }
@@ -103,21 +128,27 @@ const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUp
     if (availablePieces[pieceType] <= 0) return;
 
     // New value: positive (red) if I'm red, negative (blue) if I'm blue.
-    const newValue = myColor === 'red' ? pieceType : -pieceType;
+    const newValue = myColor === "red" ? pieceType : -pieceType;
     const newGame = {
       ...game,
       [cellKey]: newValue,
       // When I send a move, I become the Sender.
       SenderId: myId,
       // Keep the opponent's id (ReceiverId) in the game.
-      ReceiverId: game.ReceiverId || opponentId
+      ReceiverId: opponentId,
     };
 
     try {
       // Save the game to the server.
       await saveGame(newGame);
-      // Update local state.
+      // Update local game state.
       setGame(newGame);
+
+      // Toggle turn: if red just played, it's blue's turn, and vice versa.
+      setTurn((prevTurn) => ({
+        red: !prevTurn.red,
+        blue: !prevTurn.blue,
+      }));
 
       // Call the parent's update function (if provided) to update the games array.
       if (onGameUpdate) {
@@ -126,9 +157,15 @@ const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUp
 
       // Check for a win.
       const newBoard = [
-        newGame.cell1, newGame.cell2, newGame.cell3,
-        newGame.cell4, newGame.cell5, newGame.cell6,
-        newGame.cell7, newGame.cell8, newGame.cell9,
+        newGame.cell1,
+        newGame.cell2,
+        newGame.cell3,
+        newGame.cell4,
+        newGame.cell5,
+        newGame.cell6,
+        newGame.cell7,
+        newGame.cell8,
+        newGame.cell9,
       ];
       const win = checkWin(newBoard);
       if (win) {
@@ -154,34 +191,47 @@ const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUp
   // Render the image for a cell if a piece is present.
   const renderCellContent = (cellValue) => {
     if (cellValue === 0) return null;
-    const colorPrefix = cellValue > 0 ? 'r' : 'b';
+    const colorPrefix = cellValue > 0 ? "r" : "b";
     const pieceType = Math.abs(cellValue);
     const imgSrc = `/ttt/${colorPrefix}${pieceType}.svg`;
     return (
       <img
         src={imgSrc}
         alt={`${colorPrefix}${pieceType}`}
-        style={{ width: '100%', height: '100%' }}
+        style={{ width: "100%", height: "100%" }}
       />
     );
   };
 
   // Check if the board is completely empty.
-  const boardEmpty = boardCells.every(cell => cell === 0);
+  const boardEmpty = boardCells.every((cell) => cell === 0);
 
   return (
     <div>
       {winner && (
-        <div style={{ marginBottom: '10px', fontWeight: 'bold' }}>
+        <div style={{ marginBottom: "10px", fontWeight: "bold" }}>
           {winner.toUpperCase()} wins!
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 100px)', gridGap: '5px' }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 100px)",
+          gridGap: "5px",
+        }}
+      >
         {boardCells.map((cellValue, index) => (
           <div
             key={index}
-            style={{ width: '100px', height: '100px', border: '1px solid black', position: 'relative' }}
-            onMouseEnter={() => { if (!boardDisabled) setHoveredCell(index); }}
+            style={{
+              width: "100px",
+              height: "100px",
+              border: "1px solid black",
+              position: "relative",
+            }}
+            onMouseEnter={() => {
+              if (!boardDisabled) setHoveredCell(index);
+            }}
             onMouseLeave={() => setHoveredCell(null)}
           >
             {renderCellContent(cellValue)}
@@ -189,29 +239,40 @@ const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUp
             {!boardDisabled && hoveredCell === index && (
               <div
                 style={{
-                  position: 'absolute',
+                  position: "absolute",
                   top: 0,
                   left: 0,
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: 'rgba(255,255,255,0.8)',
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 1
+                  width: "100%",
+                  height: "100%",
+                  backgroundColor: "rgba(255,255,255,0.8)",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  zIndex: 1,
                 }}
               >
-                {getAllowedMoves(cellValue).map(pieceType => {
-                  const imgSrc = `/ttt/${myColor === 'red' ? 'r' : 'b'}${pieceType}.svg`;
+                {getAllowedMoves(cellValue).map((pieceType) => {
+                  const imgSrc = `/ttt/${
+                    myColor === "red" ? "r" : "b"
+                  }${pieceType}.svg`;
                   return (
                     <button
                       key={pieceType}
                       onClick={() => handleMove(index, pieceType)}
-                      style={{ margin: '2px', padding: '0', border: 'none', background: 'none' }}
+                      style={{
+                        margin: "2px",
+                        padding: "0",
+                        border: "none",
+                        background: "none",
+                      }}
                       disabled={availablePieces[pieceType] <= 0}
                     >
-                      <img src={imgSrc} alt={`${myColor} ${pieceType}`} style={{ width: '30px', height: '30px' }} />
+                      <img
+                        src={imgSrc}
+                        alt={`${myColor} ${pieceType}`}
+                        style={{ width: "30px", height: "30px" }}
+                      />
                     </button>
                   );
                 })}
@@ -221,7 +282,9 @@ const TicTacToeGame = ({ game: initialGame, saveGame, myId, opponentId, onGameUp
         ))}
       </div>
       {boardEmpty && (
-        <div style={{ textAlign: 'center', marginTop: '10px', fontWeight: 'bold' }}>
+        <div
+          style={{ textAlign: "center", marginTop: "10px", fontWeight: "bold" }}
+        >
           Start playing!
         </div>
       )}

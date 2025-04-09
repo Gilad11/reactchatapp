@@ -12,6 +12,7 @@ const SignUpPage = () => {
     email: "",
     password: "",
     confirmPassword: "",
+    profilePicture: "null", // Store file object instead of path
   });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -23,23 +24,44 @@ const SignUpPage = () => {
     });
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]; // Get the first file
+    if (file) {
+      setFormData({
+        ...formData,
+        profilePicture: file, // Store the file object
+      });
+    }
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
 
     // Basic validation
+    if (!formData.email.includes("@")) {
+      setError("Please enter a valid email address containing '@'");
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
 
+    const formDataToSend = new FormData(); // Create FormData for file uploads
+    formDataToSend.append("Id", formData.username);
+    formDataToSend.append("Name", formData.name);
+    formDataToSend.append("Email", formData.email);
+    formDataToSend.append("Password", formData.password);
+    formDataToSend.append("ProfilePicture", formData.profilePicture); // Append file if present
+
     try {
       const response = await axios.post(
-        "http://localhost:5266/api/Login/register",
+        "http://localhost:5266/api/Login/register", // Your API endpoint
+        formDataToSend,
         {
-          Id: formData.username,
-          Name: formData.username,
-          Email: formData.email,
-          Password: formData.password,
+          // Don't manually set the content-type for multipart/form-data
+          // Axios will handle it automatically when using FormData
         }
       );
 
@@ -47,7 +69,7 @@ const SignUpPage = () => {
       if (accessToken) {
         setToken(accessToken);
         sessionStorage.setItem("username", formData.username);
-        navigate("/");
+        navigate("/"); // Navigate to home or dashboard
       } else {
         setError("Registration successful, but no token received.");
       }
@@ -62,7 +84,10 @@ const SignUpPage = () => {
         <div className="row justify-content-center">
           <div className="col-12 col-md-10 col-lg-8">
             <div className="card bg-dark text-white custom-card">
-              <div className="card-body p-5 text-center">
+              <div
+                className="card-body p-5 text-center"
+                style={{ height: "100vh" }}
+              >
                 <form onSubmit={handleSignup}>
                   <div className="mb-md-5 mt-md-4 pb-5">
                     <h2 className="fw-bold mb-2 text-uppercase">Sign Up</h2>
@@ -70,6 +95,7 @@ const SignUpPage = () => {
                       Create your account to get started!
                     </p>
 
+                    {/* Name Field */}
                     <div className="form-outline form-white mb-4">
                       <input
                         type="text"
@@ -80,11 +106,12 @@ const SignUpPage = () => {
                         onChange={handleChange}
                         required
                       />
-                      <label className="form-label" htmlFor="Name">
+                      <label className="form-label" htmlFor="name">
                         Name
                       </label>
                     </div>
 
+                    {/* Username Field */}
                     <div className="form-outline form-white mb-4">
                       <input
                         type="text"
@@ -100,6 +127,7 @@ const SignUpPage = () => {
                       </label>
                     </div>
 
+                    {/* Email Field */}
                     <div className="form-outline form-white mb-4">
                       <input
                         type="email"
@@ -115,6 +143,7 @@ const SignUpPage = () => {
                       </label>
                     </div>
 
+                    {/* Password Field */}
                     <div className="form-outline form-white mb-4">
                       <input
                         type="password"
@@ -130,6 +159,7 @@ const SignUpPage = () => {
                       </label>
                     </div>
 
+                    {/* Confirm Password Field */}
                     <div className="form-outline form-white mb-4">
                       <input
                         type="password"
@@ -145,12 +175,28 @@ const SignUpPage = () => {
                       </label>
                     </div>
 
+                    {/* Profile Picture Upload Field */}
+                    <div className="form-outline form-white mb-4">
+                      <input
+                        type="file"
+                        id="profilepicture"
+                        name="profilepicture"
+                        className="form-control form-control-lg"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                      <label className="form-label" htmlFor="profilepicture">
+                        Profile Picture
+                      </label>
+                    </div>
+
+                    {/* Error Message */}
                     {error && <p className="text-danger">{error}</p>}
 
+                    {/* Submit Button */}
                     <button
                       className="btn btn-outline-light btn-lg px-5"
                       type="submit"
-                      onClick={handleSignup}
                     >
                       Sign Up
                     </button>
@@ -165,18 +211,18 @@ const SignUpPage = () => {
                       <a href="#!" className="text-white">
                         <i className="fab fa-google fa-lg"></i>
                       </a>
+
+                      <div>
+                        <p className="mb-0">
+                          Already have an account?{" "}
+                          <a href="/signin" className="text-white-50 fw-bold">
+                            Sign In
+                          </a>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </form>
-
-                <div>
-                  <p className="mb-0">
-                    Already have an account?{" "}
-                    <a href="/signin" className="text-white-50 fw-bold">
-                      Sign In
-                    </a>
-                  </p>
-                </div>
               </div>
             </div>
           </div>

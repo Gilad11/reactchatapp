@@ -1,4 +1,3 @@
-// HomePage.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import "../Styles/HomePage.css";
 import {
@@ -10,9 +9,13 @@ import personImg from "/src/assets/Person.jpg";
 import { useNavigate } from "react-router-dom";
 import { startConnection, getHubConnection } from "../../../signalRService.js";
 import TicTacToeGame from "./TicTacDog.jsx"; // Import as requested
+import { use } from "react";
 
 const HomePage = () => {
-  const [data, setData] = useState([]); // List of users
+  // Full users list is stored in allUsers.
+  const [allUsers, setAllUsers] = useState([]);
+  // data holds filtered users (initially, same as full list).
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedChat, setSelectedChat] = useState(null); // Currently selected chat
@@ -34,9 +37,13 @@ const HomePage = () => {
   };
 
   const [searchText, setSearchText] = useState("");
-  const handleSearchChange = (e) => setSearchText(e.target.value);
+  const handleSearchChange = (e) => {
+    setSearchText(e.target.value);
+  };
+
+  // On clicking search, filter the full users list (allUsers) and update 'data'
   const handleSearchClick = () => {
-    const filteredUsers = data.filter((user) =>
+    const filteredUsers = allUsers.filter((user) =>
       user.name.toLowerCase().includes(searchText.toLowerCase())
     );
     setData(filteredUsers);
@@ -96,8 +103,30 @@ const HomePage = () => {
       setMessages((prev) => [...prev, { senderId, content }]);
     });
     hubConnection.on("ReceiveGame", (gameData) => {
-      console.log("Game data received:", gameData);
-      addGameData(gameData);
+      console.log("Game data received via SignalR:", gameData);
+
+      // If gameData is a string, parse it
+      const parsedGame =
+        typeof gameData === "string" ? JSON.parse(gameData) : gameData;
+
+      // Add immediate debug logging
+      console.log("Parsed game data:", parsedGame);
+      console.log("Current selected chat:", selectedChat);
+
+      // Add the game data to the games array
+      addGameData(parsedGame);
+
+      // If this game involves the current selected chat, update activeGame directly
+      if (
+        selectedChat &&
+        ((parsedGame.SenderId === userIn &&
+          parsedGame.ReceiverId === selectedChat.id) ||
+          (parsedGame.SenderId === selectedChat.id &&
+            parsedGame.ReceiverId === userIn))
+      ) {
+        console.log("Updating active game directly for selected chat");
+        setActiveGame(parsedGame);
+      }
     });
     return () => {
       hubConnection.off("ReceiveMessage");
@@ -113,8 +142,11 @@ const HomePage = () => {
         if (Array.isArray(result) && result.length > 0) {
           // Filter out the current user.
           const filtered = result.filter((user) => user.id !== userIn);
+          setAllUsers(filtered);
+          // initialize data with the full (filtered) list.
           setData(filtered);
         } else {
+          setAllUsers([]);
           setData([]);
         }
       } catch (err) {
@@ -169,23 +201,23 @@ const HomePage = () => {
     }
   };
 
-  // useMemo to recalc the active game whenever games or selectedChat changes.
-  const activeGame = useMemo(() => {
-    console.log("Calculating active game...");
-    console.log("Games:", games);
-    console.log("Selected chat:", selectedChat);
-    console.log("Current user:", userIn);
+  const [activeGame, setActiveGame] = useState(undefined);
 
-    if (!selectedChat) return undefined;
-
-    const foundGame = games.find(
-      (game) =>
-        (game.SenderId === userIn && game.ReceiverId === selectedChat.id) ||
-        (game.SenderId === selectedChat.id && game.ReceiverId === userIn)
-    );
-    console.log("Active game found:", foundGame);
-    return foundGame;
+  useEffect(() => {
+    if (games.length > 0 && selectedChat) {
+      const foundGame = games.find(
+        (game) =>
+          (game.senderId === userIn && game.receiverId === selectedChat.id) ||
+          (game.senderId === selectedChat.id && game.receiverId === userIn)
+      );
+      console.log("Active game found:", foundGame);
+      setActiveGame(foundGame);
+    }
   }, [games, selectedChat, userIn]);
+  const makeMove = (newGame) => {
+    GameController.saveGame(newGame);
+    addGameData(newGame);
+  };
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error}</p>;
@@ -207,7 +239,10 @@ const HomePage = () => {
                     onChange={handleSearchChange}
                   />
                   <div className="input-group-append">
-                    <button className="btn btn-primary" onClick={handleSearchClick}>
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleSearchClick}
+                    >
                       <i className="fa fa-search"></i> Search
                     </button>
                   </div>
@@ -231,11 +266,19 @@ const HomePage = () => {
                     <div className="row">
                       <div className="col-lg-6">
                         <a href="#" onClick={(e) => e.preventDefault()}>
-                          <img src={selectedChat?.profilePicture || personImg} alt="profile" />
+                          <img
+                            src={selectedChat?.profilePicture || personImg}
+                            alt="profile"
+                          />
                         </a>
                         <div className="chat-about">
-                          <h6 className="m-b-0">{selectedChat?.name || "Nobody"}</h6>
-                          <small>Last seen: {formatTime(selectedChat?.lastActiveDate)}</small>
+                          <h6 className="m-b-0">
+                            {selectedChat?.name || "Nobody"}
+                          </h6>
+                          <small>
+                            Last seen:{" "}
+                            {formatTime(selectedChat?.lastActiveDate)}
+                          </small>
                         </div>
                       </div>
                       <button className="gamerequest" onClick={sendGameRequest}>
@@ -247,29 +290,45 @@ const HomePage = () => {
                     <ul className="m-b-0">
                       {messages.length > 0 ? (
                         messages.map((message, index) => (
-                          <li key={message.messageId || `msg-${index}`} className="clearfix">
+                          <li
+                            key={message.messageId || `msg-${index}`}
+                            className="clearfix"
+                          >
                             {message.senderId === userIn ? (
                               <div className="msg-wrapper text-right">
-                                <div className="text-left">{formatTime(message.sentAt)}</div>
-                                <div className="message other-message float-right">{message.content}</div>
+                                <div className="text-left">
+                                  {formatTime(message.sentAt)}
+                                </div>
+                                <div className="message other-message float-right">
+                                  {message.content}
+                                </div>
                               </div>
                             ) : (
                               <div className="msg-wrapper">
-                                <div className="text-right">{formatTime(message.sentAt)}</div>
-                                <div className="message my-message">{message.content}</div>
+                                <div className="text-right">
+                                  {formatTime(message.sentAt)}
+                                </div>
+                                <div className="message my-message">
+                                  {message.content}
+                                </div>
                               </div>
                             )}
                           </li>
                         ))
                       ) : (
                         <li className="clearfix">
-                          <div className="message my-message">No messages available.</div>
+                          <div className="message my-message">
+                            No messages available.
+                          </div>
                         </li>
                       )}
                     </ul>
                   </div>
                   <div className="chat-message clearfix">
-                    <div className="input-group mb-0" style={{ display: "flex", alignItems: "center" }}>
+                    <div
+                      className="input-group mb-0"
+                      style={{ display: "flex", alignItems: "center" }}
+                    >
                       <input
                         type="text"
                         className="form-control"
@@ -293,7 +352,7 @@ const HomePage = () => {
                   <div className="game-wrapper">
                     <TicTacToeGame
                       game={activeGame}
-                      saveGame={GameController.saveGame}
+                      saveGame={makeMove}
                       myId={userIn}
                       opponentId={selectedChat.id}
                       onGameUpdate={addGameData}

@@ -105,23 +105,39 @@ const MessageController = {
 };
 
 const GameController = {
-  // Call this endpoint to save/update the game
+  // Modified saveGame method to handle game creation and joining
   saveGame: async (gameData) => {
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/api/game/savegame`, // Ensure your .NET API has a matching endpoint.
-        gameData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
+      // Check if the game already exists or if it's a new game
+      const response = await axios.get(
+        `${API_BASE_URL}/api/game/getGame/${gameData.SenderId}/${gameData.ReceiverId}`
       );
-      console.log("✅ Game saved:", response.data);
-      return response.data;
+
+      if (response.data) {
+        // If the game already exists, just update the game state
+        const updatedGame = await axios.post(
+          `${API_BASE_URL}/api/game/savegame`, 
+          gameData,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        console.log("✅ Game updated:", updatedGame.data);
+        return updatedGame.data;
+      } else {
+        // If no existing game, create a new game
+        const newGame = await axios.post(
+          `${API_BASE_URL}/api/game/savegame`,
+          gameData,
+          { headers: { "Content-Type": "application/json" } }
+        );
+        console.log("✅ New game created:", newGame.data);
+        return newGame.data;
+      }
     } catch (error) {
       console.error("❌ Error saving game:", error.response?.data || error.message);
     }
   },
-  // Optionally: An endpoint to retrieve game data
+  
+  // Optionally: Endpoint to retrieve a specific game
   getGame: async (senderId, receiverId) => {
     try {
       const response = await axios.get(
@@ -131,18 +147,9 @@ const GameController = {
     } catch (error) {
       console.error("❌ Error getting game:", error.response?.data || error.message);
     }
-  },
-  getGames: async (myId) => {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/game/getGames/${myId}`
-      );
-      return response.data;
-    } catch (error) {
-      console.error("❌ Error getting games:", error.response?.data || error.message);
-    }
   }
 };
+
 
 // Export all controllers in a single object
 export { UsersController, MessageController, AuthController, GameController };

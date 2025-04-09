@@ -1,5 +1,6 @@
 // TicTacToeGame.jsx
 import React, { useState, useEffect } from "react";
+import { use } from "react";
 
 // Creates an empty game board with a valid ReceiverId.
 function createEmptyGame(myId, opponentId) {
@@ -14,8 +15,9 @@ function createEmptyGame(myId, opponentId) {
     cell7: 0,
     cell8: 0,
     cell9: 0,
-    SenderId: myId || "",
-    ReceiverId: opponentId || "",
+    senderId: "",
+    receiverId: "",
+    redId: myId,
   };
 }
 
@@ -33,17 +35,17 @@ const TicTacToeGame = ({
   const [hoveredCell, setHoveredCell] = useState(null);
   const [winner, setWinner] = useState(null);
   // New state object that tracks whose turn it is.
-  // Start with red's turn.
-  const [turn, setTurn] = useState({ red: true, blue: false });
-
   // Update internal game state (and reset turns) when a new game object arrives.
   useEffect(() => {
     setGame(
       initialGame ? { ...initialGame } : createEmptyGame(myId, opponentId)
     );
-    setTurn({ red: true, blue: false });
     setWinner(null);
   }, [initialGame, myId, opponentId]);
+
+  useEffect(() => {
+    console.log("Game:", game);
+  }, [game]);
 
   // Convert the game board cells into an array.
   const boardCells = [
@@ -69,15 +71,10 @@ const TicTacToeGame = ({
   );
 
   // Determine my color. For a new game, assume I'm red.
-  const myColor =
-    !game.SenderId && !game.ReceiverId
-      ? "red"
-      : myId === game.SenderId
-      ? "red"
-      : "blue";
+  const myColor = game.redId === myId ? "red" : "blue";
 
   // Disable the board if a winner is declared OR if it's not the player's turn.
-  const boardDisabled = !!winner || !turn[myColor];
+  const boardDisabled = game.senderId === myId || winner
 
   // Each player starts with 3 available pieces per level: 1 (mouse), 2 (cat), 3 (dog).
   // Count the pieces you have already played.
@@ -133,9 +130,9 @@ const TicTacToeGame = ({
       ...game,
       [cellKey]: newValue,
       // When I send a move, I become the Sender.
-      SenderId: myId,
+      senderId: myId,
       // Keep the opponent's id (ReceiverId) in the game.
-      ReceiverId: opponentId,
+      receiverId: opponentId,
     };
 
     try {
@@ -143,12 +140,6 @@ const TicTacToeGame = ({
       await saveGame(newGame);
       // Update local game state.
       setGame(newGame);
-
-      // Toggle turn: if red just played, it's blue's turn, and vice versa.
-      setTurn((prevTurn) => ({
-        red: !prevTurn.red,
-        blue: !prevTurn.blue,
-      }));
 
       // Call the parent's update function (if provided) to update the games array.
       if (onGameUpdate) {

@@ -4,6 +4,9 @@ class ChatSignalRService {
   constructor() {
     this.connection = null;
     this.hubUrl = "http://localhost:5266/chatHub";
+    // Callback stubs for different events
+    this.messageCallback = null;
+    this.gameCallback = null;
   }
 
   async startConnection(token) {
@@ -16,9 +19,17 @@ class ChatSignalRService {
         .build();
 
       // Set up message handler
-      this.connection.on("ReceiveMessage", (senderId, content) => {
+      this.connection.on("receivemessage", (senderId, content) => {
         if (this.messageCallback) {
           this.messageCallback(senderId, content);
+        }
+      });
+      
+      // Set up game retrieval notification handler
+      this.connection.on("ReceiveGame", (gameData) => {
+        console.log("Received game data:", gameData);
+        if (this.gameCallback) {
+          this.gameCallback(gameData);
         }
       });
 
@@ -36,16 +47,21 @@ class ChatSignalRService {
     this.messageCallback = callback;
   }
 
+  // Register game notification callback for receiving the game
+  onReceiveGame(callback) {
+    this.gameCallback = callback;
+    console.log("Game callback registered");
+  }
+
+  onReceiveGame(callback){
+    this.gameUpdateCallback = callback;
+  }
+
   // Send message
   async sendMessage(senderId, receiverId, content) {
     try {
       if (this.connection?.state === signalR.HubConnectionState.Connected) {
-        await this.connection.invoke(
-          "SendMessage",
-          senderId,
-          receiverId,
-          content
-        );
+        await this.connection.invoke("SendMessage", senderId, receiverId, content);
         return true;
       }
       return false;

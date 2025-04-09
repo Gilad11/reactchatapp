@@ -1,0 +1,15 @@
+<!-- Blue Dog Icon -->
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <!-- Floppy Ears -->
+  <ellipse cx="30" cy="30" rx="8" ry="12" fill="blue" />
+  <ellipse cx="70" cy="30" rx="8" ry="12" fill="blue" />
+  <!-- Face -->
+  <circle cx="50" cy="55" r="20" fill="blue" />
+  <!-- Eyes -->
+  <circle cx="43" cy="50" r="3" fill="white"/>
+  <circle cx="57" cy="50" r="3" fill="white"/>
+  <!-- Nose -->
+  <circle cx="50" cy="60" r="3" fill="black"/>
+  <!-- Mouth -->
+  <path d="M45,65 Q50,70 55,65" stroke="black" stroke-width="2" fill="none" />
+</svg>

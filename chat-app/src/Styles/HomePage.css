@@ -281,3 +281,12 @@ body {
 .text-left{
   text-align: start;
 }
+
+.chat-game-wrapper{
+  display: flex;
+  flex-direction: row;
+}
+
+.game-wrapper{
+  width: 600px;
+}

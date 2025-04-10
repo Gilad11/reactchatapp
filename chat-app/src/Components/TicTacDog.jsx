@@ -1,9 +1,7 @@
-// TicTacToeGame.jsx
 import React, { useState, useEffect } from "react";
-import { use } from "react";
 
 // Creates an empty game board with a valid ReceiverId.
-function createEmptyGame(myId, opponentId) {
+function createEmptyGame(myId) {
   return {
     id: 0, // if created on the server, the game id will be set later.
     cell1: 0,
@@ -15,9 +13,9 @@ function createEmptyGame(myId, opponentId) {
     cell7: 0,
     cell8: 0,
     cell9: 0,
-    senderId: "",
-    receiverId: "",
-    redId: myId,
+    senderId: "", // Sender is the first player who makes the move
+    receiverId: "", // Receiver is the opponent
+    redId: myId, // The player who is assigned as red
   };
 }
 
@@ -30,24 +28,18 @@ const TicTacToeGame = ({
 }) => {
   // If no game is passed, initialize an empty one with the proper receiver.
   const [game, setGame] = useState(
-    initialGame ? { ...initialGame } : createEmptyGame(myId, opponentId)
+    initialGame ? { ...initialGame } : createEmptyGame(myId)
   );
-  const [hoveredCell, setHoveredCell] = useState(null);
-  const [winner, setWinner] = useState(null);
-  // New state object that tracks whose turn it is.
-  // Update internal game state (and reset turns) when a new game object arrives.
+  const [hoveredCell, setHoveredCell] = useState(null); // Track hovered cell for showing available moves
+  const [winner, setWinner] = useState(null); // State for winner
+
+  // Whenever the initial game or player data changes, reset the game and winner state.
   useEffect(() => {
-    setGame(
-      initialGame ? { ...initialGame } : createEmptyGame(myId, opponentId)
-    );
-    setWinner(null);
+    setGame(initialGame ? { ...initialGame } : createEmptyGame(myId));
+    setWinner(null); // Reset winner when game is reset
   }, [initialGame, myId, opponentId]);
 
-  useEffect(() => {
-    console.log("Game:", game);
-  }, [game]);
-
-  // Convert the game board cells into an array.
+  // Board cells, representing the state of each cell in the 3x3 grid
   const boardCells = [
     game.cell1,
     game.cell2,
@@ -60,7 +52,7 @@ const TicTacToeGame = ({
     game.cell9,
   ];
 
-  // Count how many red and blue pieces have been placed.
+  // Count how many red and blue pieces have been placed on the board
   const redCount = boardCells.reduce(
     (acc, cell) => (cell > 0 ? acc + 1 : acc),
     0
@@ -70,14 +62,13 @@ const TicTacToeGame = ({
     0
   );
 
-  // Determine my color. For a new game, assume I'm red.
+  // Determine which color the current player is based on the `redId` property
   const myColor = game.redId === myId ? "red" : "blue";
 
-  // Disable the board if a winner is declared OR if it's not the player's turn.
-  const boardDisabled = game.senderId === myId || winner
+  // Disable the board if the game is won or if it’s the current player's turn.
+  const boardDisabled = game.senderId === myId || winner;
 
-  // Each player starts with 3 available pieces per level: 1 (mouse), 2 (cat), 3 (dog).
-  // Count the pieces you have already played.
+  // Track the available pieces of each type (mouse, cat, dog)
   const availablePieces = { 1: 3, 2: 3, 3: 3 };
   boardCells.forEach((cell) => {
     if (myColor === "red" && cell > 0) {
@@ -87,33 +78,50 @@ const TicTacToeGame = ({
     }
   });
 
-  // Check for win conditions (three-in-a-row, column or diagonal).
-  const checkWin = (board) => {
+  const restartGame = async () => {
+    const emptyGame = createEmptyGame(myId);
+    await saveGame(emptyGame);
+    setGame(emptyGame);
+    setWinner(null);
+  };
+
+  // Check for win conditions (three-in-a-row, column, or diagonal).
+  const checkWin = (board, redId) => {
     const lines = [
-      [0, 1, 2],
-      [3, 4, 5],
-      [6, 7, 8],
-      [0, 3, 6],
-      [1, 4, 7],
-      [2, 5, 8],
-      [0, 4, 8],
-      [2, 4, 6],
+      [0, 1, 2], // First row
+      [3, 4, 5], // Second row
+      [6, 7, 8], // Third row
+      [0, 3, 6], // First column
+      [1, 4, 7], // Second column
+      [2, 5, 8], // Third column
+      [0, 4, 8], // Diagonal top-left to bottom-right
+      [2, 4, 6], // Diagonal top-right to bottom-left
     ];
+    // Loop through each line and check if all three cells are either greater than 0 or less than 0
     for (let [a, b, c] of lines) {
-      if (board[a] !== 0 && board[b] !== 0 && board[c] !== 0) {
-        const colorA = board[a] > 0 ? "red" : "blue";
-        const colorB = board[b] > 0 ? "red" : "blue";
-        const colorC = board[c] > 0 ? "red" : "blue";
-        if (colorA === colorB && colorB === colorC) {
-          return colorA;
-        }
+      if (
+        (board[a] > 0 && board[b] > 0 && board[c] > 0) ||
+        (board[a] < 0 && board[b] < 0 && board[c] < 0)
+      ) {
+        // If all three cells are either positive or negative, return the color of the winner
+        const winnerColor = board[a] > 0 ? "red" : "blue";
+        const winner =
+          winnerColor === "red"
+            ? (redId === myId ? myId : opponentId) + " Win!"
+            : (blueId === myId ? myId : opponentId) + " Win!";
+
+        setWinner(winner);
+
+        console.log("winner:", winner);
+
+        return winner; // Red if the value is positive, blue if negative
       }
     }
-    return null;
+    setWinner(null);
+    return null; // If no winner found
   };
 
   // Called when a move button is clicked.
-  // cellIndex: 0-8 representing the cell; pieceType: 1 (mouse), 2 (cat), 3 (dog).
   const handleMove = async (cellIndex, pieceType) => {
     const cellKey = `cell${cellIndex + 1}`;
     const currentCellValue = game[cellKey];
@@ -121,7 +129,7 @@ const TicTacToeGame = ({
 
     // You can only place a piece if the cell is empty or holds a smaller piece.
     if (currentCellValue !== 0 && pieceType <= currentLevel) return;
-    // Also, do nothing if no pieces of that type remain.
+    // Do nothing if no pieces of that type remain.
     if (availablePieces[pieceType] <= 0) return;
 
     // New value: positive (red) if I'm red, negative (blue) if I'm blue.
@@ -129,10 +137,8 @@ const TicTacToeGame = ({
     const newGame = {
       ...game,
       [cellKey]: newValue,
-      // When I send a move, I become the Sender.
-      senderId: myId,
-      // Keep the opponent's id (ReceiverId) in the game.
-      receiverId: opponentId,
+      senderId: myId, // Player making the move
+      receiverId: opponentId, // Opponent's ID remains the same
     };
 
     try {
@@ -146,7 +152,7 @@ const TicTacToeGame = ({
         onGameUpdate(newGame);
       }
 
-      // Check for a win.
+      // Check for a win after making the move.
       const newBoard = [
         newGame.cell1,
         newGame.cell2,
@@ -158,11 +164,10 @@ const TicTacToeGame = ({
         newGame.cell8,
         newGame.cell9,
       ];
-      const win = checkWin(newBoard);
-      if (win) {
-        setWinner(win);
-      }
-      setHoveredCell(null);
+
+      checkWin(newBoard, newGame.redId);
+
+      setHoveredCell(null); // Reset hovered cell after making a move
     } catch (error) {
       console.error("Error saving game: ", error);
     }
@@ -173,7 +178,7 @@ const TicTacToeGame = ({
     const allowed = [];
     for (let type = 1; type <= 3; type++) {
       if (availablePieces[type] > 0 && type > Math.abs(cellValue)) {
-        allowed.push(type);
+        allowed.push(type); // Add piece types that can be placed in the current cell
       }
     }
     return allowed;
@@ -184,7 +189,7 @@ const TicTacToeGame = ({
     if (cellValue === 0) return null;
     const colorPrefix = cellValue > 0 ? "r" : "b";
     const pieceType = Math.abs(cellValue);
-    const imgSrc = `/ttt/${colorPrefix}${pieceType}.svg`;
+    const imgSrc = `/ttt/${colorPrefix}${pieceType}.svg`; // Image source based on piece color and type
     return (
       <img
         src={imgSrc}
@@ -197,13 +202,50 @@ const TicTacToeGame = ({
   // Check if the board is completely empty.
   const boardEmpty = boardCells.every((cell) => cell === 0);
 
+  console.log("winner:", winner);
+
+  useEffect(() => {
+    const newBoard = [
+      game.cell1,
+      game.cell2,
+      game.cell3,
+      game.cell4,
+      game.cell5,
+      game.cell6,
+      game.cell7,
+      game.cell8,
+      game.cell9,
+    ];
+
+    checkWin(newBoard, game.redId);
+
+
+  }, [game]);
+
   return (
     <div>
-      {winner && (
-        <div style={{ marginBottom: "10px", fontWeight: "bold" }}>
-          {winner.toUpperCase()} wins!
-        </div>
-      )}
+      <div
+        style={{
+          marginBottom: "10px",
+          fontWeight: "bold",
+          height: "42px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "bottom",
+        }}
+      >
+        {winner && (
+          <div
+            style={{ textAlign: "center", fontWeight: "bold", margin: "auto" }}
+          >
+            {winner}
+          </div>
+        )}
+        <button className="restartGame" onClick={restartGame}>
+          Restart
+        </button>
+      </div>
+
       <div
         style={{
           display: "grid",
@@ -221,11 +263,11 @@ const TicTacToeGame = ({
               position: "relative",
             }}
             onMouseEnter={() => {
-              if (!boardDisabled) setHoveredCell(index);
+              if (!boardDisabled) setHoveredCell(index); // Set hovered cell for move preview
             }}
-            onMouseLeave={() => setHoveredCell(null)}
+            onMouseLeave={() => setHoveredCell(null)} // Reset hovered cell
           >
-            {renderCellContent(cellValue)}
+            {renderCellContent(cellValue)} {/* Display the piece in the cell */}
             {/* When hovering, show available piece buttons if a move is allowed */}
             {!boardDisabled && hoveredCell === index && (
               <div
@@ -250,14 +292,14 @@ const TicTacToeGame = ({
                   return (
                     <button
                       key={pieceType}
-                      onClick={() => handleMove(index, pieceType)}
+                      onClick={() => handleMove(index, pieceType)} // Handle the move
                       style={{
                         margin: "2px",
                         padding: "0",
                         border: "none",
                         background: "none",
                       }}
-                      disabled={availablePieces[pieceType] <= 0}
+                      disabled={availablePieces[pieceType] <= 0} // Disable button if no pieces left
                     >
                       <img
                         src={imgSrc}

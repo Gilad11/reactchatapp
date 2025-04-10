@@ -51,12 +51,6 @@ const HomePage = () => {
 
   const handleInputChange = (e) => setInputText(e.target.value.trimStart());
 
-  const sendGameRequest = (e) => {
-    e.preventDefault();
-    // Example game request; adjust as needed.
-    GameController.saveGame({ id: 1, senderId: "aaa", receiverId: "bbb" });
-  };
-
   // Improved addGameData: always create a new array instance and update a game that matches by sender/receiver.
   const addGameData = (g) => {
     if (!g) return;
@@ -203,6 +197,12 @@ const HomePage = () => {
 
   const [activeGame, setActiveGame] = useState(undefined);
 
+  const handleEnterKeyDown = (e) => {
+    if (e.key === "Enter" && inputText.trim()) {
+      addMessage(); // Trigger the addMessage function when Enter is pressed
+    }
+  };
+
   useEffect(() => {
     if (games.length > 0 && selectedChat) {
       const foundGame = games.find(
@@ -281,9 +281,6 @@ const HomePage = () => {
                           </small>
                         </div>
                       </div>
-                      <button className="gamerequest" onClick={sendGameRequest}>
-                        Game Request
-                      </button>
                     </div>
                   </div>
                   <div className="chat-history">
@@ -335,6 +332,7 @@ const HomePage = () => {
                         placeholder="Enter text here..."
                         value={inputText}
                         onChange={handleInputChange}
+                        onKeyDown={handleEnterKeyDown}
                         style={{ flex: 1, marginRight: "10px" }}
                       />
                       <button

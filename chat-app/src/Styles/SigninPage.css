@@ -17,7 +17,7 @@
 
 .card {
   width: 100% !important;
-  max-width: 600px !important;
+  max-width: 90vw !important;
   border-radius: 1rem !important;
   margin: auto !important;
 }

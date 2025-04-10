@@ -12,7 +12,6 @@ const SignUpPage = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    profilePicture: "null", // Store file object instead of path
   });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -24,20 +23,10 @@ const SignUpPage = () => {
     });
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]; // Get the first file
-    if (file) {
-      setFormData({
-        ...formData,
-        profilePicture: file, // Store the file object
-      });
-    }
-  };
-
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    // Basic validation
+    // validation
     if (!formData.email.includes("@")) {
       setError("Please enter a valid email address containing '@'");
       return;
@@ -48,20 +37,21 @@ const SignUpPage = () => {
       return;
     }
 
-    const formDataToSend = new FormData(); // Create FormData for file uploads
-    formDataToSend.append("Id", formData.username);
-    formDataToSend.append("Name", formData.name);
-    formDataToSend.append("Email", formData.email);
-    formDataToSend.append("Password", formData.password);
-    formDataToSend.append("ProfilePicture", formData.profilePicture); // Append file if present
+    const formDataToSend = {
+      Id: formData.username,
+      Name: formData.name,
+      Email: formData.email,
+      Password: formData.password,
+    };
 
     try {
       const response = await axios.post(
-        "http://localhost:5266/api/Login/register", // Your API endpoint
+        "http://localhost:5266/api/Login/register",
         formDataToSend,
         {
-          // Don't manually set the content-type for multipart/form-data
-          // Axios will handle it automatically when using FormData
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -69,7 +59,7 @@ const SignUpPage = () => {
       if (accessToken) {
         setToken(accessToken);
         sessionStorage.setItem("username", formData.username);
-        navigate("/"); // Navigate to home or dashboard
+        navigate("/");
       } else {
         setError("Registration successful, but no token received.");
       }
@@ -172,21 +162,6 @@ const SignUpPage = () => {
                       />
                       <label className="form-label" htmlFor="confirmPassword">
                         Confirm Password
-                      </label>
-                    </div>
-
-                    {/* Profile Picture Upload Field */}
-                    <div className="form-outline form-white mb-4">
-                      <input
-                        type="file"
-                        id="profilepicture"
-                        name="profilepicture"
-                        className="form-control form-control-lg"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                      />
-                      <label className="form-label" htmlFor="profilepicture">
-                        Profile Picture
                       </label>
                     </div>
 

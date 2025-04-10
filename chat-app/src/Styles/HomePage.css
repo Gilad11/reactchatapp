@@ -26,7 +26,6 @@ body {
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 10%);
 }
 
-
 .chat-app .people-list {
   width: 280px;
   position: absolute;
@@ -42,7 +41,6 @@ body {
 }
 
 .card .chat-app {
-
   height: 100vh;
   margin-left: 280px;
 }
@@ -262,7 +260,6 @@ body {
     overflow-x: auto;
   }
 }
-
 
 @media only screen and (min-width: 768px) and (max-width: 992px) {
   .chat-app .chat-list {

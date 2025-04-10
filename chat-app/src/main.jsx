@@ -10,7 +10,6 @@ import "./index.css";
 import HomePage from "./Components/HomePage";
 import SignIn from "./Components/SignInPage";
 import SignUpPage from "./Components/signUpPage";
-import GamePage from "./Components/GamePage";
 import { AuthProvider, useAuth } from "./context/AuthProvider";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -34,7 +33,6 @@ ReactDOM.createRoot(document.getElementById("root")).render(
               </PrivateRoute>
             }
           />
-          <Route path="/game" element={<GamePage />} />
         </Routes>
       </Router>
     </AuthProvider>

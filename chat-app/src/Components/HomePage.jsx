@@ -8,24 +8,21 @@ import {
 import personImg from "/src/assets/Person.jpg";
 import { useNavigate } from "react-router-dom";
 import { startConnection, getHubConnection } from "../../../signalRService.js";
-import TicTacToeGame from "./TicTacDog.jsx"; // Import as requested
+import TicTacToeGame from "./TicTacDog.jsx";
 import { use } from "react";
 
 const HomePage = () => {
-  // Full users list is stored in allUsers.
   const [allUsers, setAllUsers] = useState([]);
-  // data holds filtered users (initially, same as full list).
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedChat, setSelectedChat] = useState(null); // Currently selected chat
+  const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [games, setGames] = useState([]);
   const [inputText, setInputText] = useState("");
   const navigate = useNavigate();
   const userIn = sessionStorage.getItem("username");
 
-  // Format timestamps for display.
   const formatTime = (dateString) => {
     if (!dateString) return "never";
     const date = new Date(dateString);
@@ -41,7 +38,6 @@ const HomePage = () => {
     setSearchText(e.target.value);
   };
 
-  // On clicking search, filter the full users list (allUsers) and update 'data'
   const handleSearchClick = () => {
     const filteredUsers = allUsers.filter((user) =>
       user.name.toLowerCase().includes(searchText.toLowerCase())
@@ -51,7 +47,6 @@ const HomePage = () => {
 
   const handleInputChange = (e) => setInputText(e.target.value.trimStart());
 
-  // Improved addGameData: always create a new array instance and update a game that matches by sender/receiver.
   const addGameData = (g) => {
     if (!g) return;
     setGames((prevGames) => {
@@ -64,7 +59,6 @@ const HomePage = () => {
         }
         return pg;
       });
-      // If no match was found, add new game to the front.
       const found = prevGames.find(
         (pg) =>
           (pg.SenderId === g.SenderId && pg.ReceiverId === g.ReceiverId) ||
@@ -99,18 +93,14 @@ const HomePage = () => {
     hubConnection.on("ReceiveGame", (gameData) => {
       console.log("Game data received via SignalR:", gameData);
 
-      // If gameData is a string, parse it
       const parsedGame =
         typeof gameData === "string" ? JSON.parse(gameData) : gameData;
 
-      // Add immediate debug logging
       console.log("Parsed game data:", parsedGame);
       console.log("Current selected chat:", selectedChat);
 
-      // Add the game data to the games array
       addGameData(parsedGame);
 
-      // If this game involves the current selected chat, update activeGame directly
       if (
         selectedChat &&
         ((parsedGame.SenderId === userIn &&
@@ -134,10 +124,8 @@ const HomePage = () => {
         const result = await UsersController.getAllUsers();
         console.log("API Response:", result);
         if (Array.isArray(result) && result.length > 0) {
-          // Filter out the current user.
           const filtered = result.filter((user) => user.id !== userIn);
           setAllUsers(filtered);
-          // initialize data with the full (filtered) list.
           setData(filtered);
         } else {
           setAllUsers([]);
@@ -153,7 +141,6 @@ const HomePage = () => {
     getAllUsers();
   }, [userIn]);
 
-  // When a chat is selected, load messages and fetch the game using the two user IDs.
   const setActive = async (chat) => {
     setSelectedChat(chat);
     try {
@@ -199,7 +186,7 @@ const HomePage = () => {
 
   const handleEnterKeyDown = (e) => {
     if (e.key === "Enter" && inputText.trim()) {
-      addMessage(); // Trigger the addMessage function when Enter is pressed
+      addMessage();
     }
   };
 
